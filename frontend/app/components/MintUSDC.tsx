@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useUserBalance, useVaultOperations } from '../hooks/useVaultContract';
 import { useIsMounted } from '../hooks/useIsMounted';
 
 export default function MintUSDC() {
   const [amount, setAmount] = useState('');
+  const [showMintSuccess, setShowMintSuccess] = useState(false);
+  const [mintedAmount, setMintedAmount] = useState('');
   const { address, isConnected } = useAccount();
-  const { usdcBalance } = useUserBalance(address);
+  const { usdcBalance, refetchUsdcBalance } = useUserBalance(address);
   const mounted = useIsMounted();
   const { 
     mintUSDC, 
@@ -22,8 +24,29 @@ export default function MintUSDC() {
 
   const handleMint = async () => {
     if (!amount || !address) return;
+    setMintedAmount(amount); // Store amount before minting
     mintUSDC(amount, address);
   };
+
+  // Show success popup when mint is confirmed
+  useEffect(() => {
+    if (isConfirmed && !isPending && !isConfirming && mintedAmount) {
+      // Use setTimeout to avoid direct setState in effect
+      const timer = setTimeout(() => {
+        setShowMintSuccess(true);
+        // Manually refresh USDC balance immediately after successful mint
+        refetchUsdcBalance();
+        
+        // Auto-hide popup after 3 seconds
+        setTimeout(() => {
+          setShowMintSuccess(false);
+          setMintedAmount('');
+        }, 3000);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isConfirmed, isPending, isConfirming, mintedAmount, refetchUsdcBalance]);
 
   // Clear form on successful transaction
   if (isConfirmed) {
@@ -158,6 +181,38 @@ export default function MintUSDC() {
         <p>• Use minted USDC to test the vault deposit function</p>
         <p>• Recommended: Mint 1,000+ USDC for meaningful testing</p>
       </div>
+
+      {/* Mint Success Popup */}
+      {showMintSuccess && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white border-2 border-black p-8 max-w-md mx-4 shadow-2xl transform transition-all duration-300 ease-out">
+            <div className="text-center">
+              <div className="text-6xl mb-4">💰</div>
+              <h3 className="text-2xl font-bold mb-2">TOKENS MINTED!</h3>
+              <p className="text-lg mb-4">
+                Successfully minted <span className="font-mono font-bold text-blue-600">{mintedAmount ? parseFloat(mintedAmount).toLocaleString() : '0'} USDC</span>!
+              </p>
+              <div className="bg-blue-50 border border-blue-200 p-4 mb-4">
+                <p className="text-sm text-blue-700">
+                  💳 <strong>New Balance:</strong> {parseFloat(usdcBalance).toLocaleString()} USDC<br />
+                  ✅ <strong>Ready for Deposit:</strong> Switch to DEPOSIT tab<br />
+                  🎯 <strong>Demo Purpose:</strong> Test tokens for vault interaction<br />
+                  🚀 <strong>Next Step:</strong> Deposit to start earning yield
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowMintSuccess(false);
+                  setMintedAmount('');
+                }}
+                className="px-6 py-2 bg-blue-600 text-white font-bold hover:bg-blue-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

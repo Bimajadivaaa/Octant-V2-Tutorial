@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useVaultData, useVaultOperations } from '../hooks/useVaultContract';
 import { useDonationData } from '../hooks/useDonationData';
 import { useIsMounted } from '../hooks/useIsMounted';
 
 export default function HarvestSection() {
+  const [showHarvestSuccess, setShowHarvestSuccess] = useState(false);
+  const [harvestedAmount, setHarvestedAmount] = useState('');
   const { isConnected } = useAccount();
   const { totalAssets, lastRecordedAssets } = useVaultData();
   const { currentProfit, recipients } = useDonationData();
@@ -23,8 +25,23 @@ export default function HarvestSection() {
   const hasProfit = parseFloat(currentProfit) > 0;
 
   const handleHarvest = async () => {
+    // Store the current profit amount before harvest
+    setHarvestedAmount(currentProfit);
     harvest();
   };
+
+  // Show success popup when harvest is confirmed
+  useEffect(() => {
+    if (isConfirmed && !isPending && !isConfirming && harvestedAmount) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowHarvestSuccess(true);
+      // Auto-hide popup after 4 seconds
+      setTimeout(() => {
+        setShowHarvestSuccess(false);
+        setHarvestedAmount('');
+      }, 4000);
+    }
+  }, [isConfirmed, isPending, isConfirming, harvestedAmount]);
 
   if (!mounted) {
     return (
@@ -122,7 +139,7 @@ export default function HarvestSection() {
         <div className="bg-blue-50 border border-blue-200 p-4 text-center">
           <div className="text-sm text-blue-700">
             <div className="font-bold mb-1">No Profit Available</div>
-            <div>Vault assets haven't exceeded the watermark yet. Wait for yield to accumulate.</div>
+            <div>Vault assets haven&apos;t exceeded the watermark yet. Wait for yield to accumulate.</div>
           </div>
         </div>
       )}
@@ -143,6 +160,44 @@ export default function HarvestSection() {
         <p>• Your original deposit amount remains completely safe</p>
         <p>• Anyone can call harvest to benefit public goods</p>
       </div>
+
+      {/* Harvest Success Popup */}
+      {showHarvestSuccess && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white border-2 border-black p-8 max-w-lg mx-4 shadow-2xl transform transition-all duration-300 ease-out">
+            <div className="text-center">
+              <div className="text-6xl mb-4">💝</div>
+              <h3 className="text-2xl font-bold mb-2">HARVEST SUCCESSFUL!</h3>
+              <p className="text-lg mb-4">
+                Successfully harvested <span className="font-mono font-bold text-green-600">{harvestedAmount ? parseFloat(harvestedAmount).toFixed(2) : '0'} USDC</span> profit!
+              </p>
+              <div className="bg-green-50 border border-green-200 p-4 mb-4">
+                <p className="text-sm text-green-700">
+                  🎁 <strong>Total Donated:</strong> {harvestedAmount ? parseFloat(harvestedAmount).toFixed(2) : '0'} USDC<br />
+                  📊 <strong>Distribution:</strong> {recipients.length > 0 && recipients[0] ? recipients[0].allocation : '70%'} to {recipients.length > 0 && recipients[0] ? recipients[0].name : 'Recipient 1'}, {recipients.length > 1 && recipients[1] ? recipients[1].allocation : '30%'} to {recipients.length > 1 && recipients[1] ? recipients[1].name : 'Recipient 2'}<br />
+                  🌱 <strong>Impact:</strong> Supporting public goods ecosystem<br />
+                  💰 <strong>Your Principal:</strong> Remains 100% protected
+                </p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 p-3 mb-4">
+                <p className="text-xs text-blue-700">
+                  <strong>🎯 Octant V2 Demo Complete!</strong><br />
+                  You&apos;ve successfully demonstrated: Mint → Deposit → Simulate Yield → Harvest & Donate
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowHarvestSuccess(false);
+                  setHarvestedAmount('');
+                }}
+                className="px-6 py-2 bg-green-600 text-white font-bold hover:bg-green-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

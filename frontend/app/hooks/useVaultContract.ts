@@ -11,18 +11,27 @@ export function useVaultData() {
     address: CONTRACTS.YDS_VAULT,
     abi: YDS_VAULT_ABI,
     functionName: 'totalAssets',
+    query: {
+      refetchInterval: 3000, // Auto-refetch every 3 seconds
+    }
   });
 
   const { data: totalSupply } = useReadContract({
     address: CONTRACTS.YDS_VAULT,
     abi: YDS_VAULT_ABI,
     functionName: 'totalSupply',
+    query: {
+      refetchInterval: 3000, // Auto-refetch every 3 seconds
+    }
   });
 
   const { data: lastRecordedAssets } = useReadContract({
     address: CONTRACTS.YDS_VAULT,
     abi: YDS_VAULT_ABI,
     functionName: 'lastRecordedAssets',
+    query: {
+      refetchInterval: 3000, // Auto-refetch every 3 seconds
+    }
   });
 
   return {
@@ -37,33 +46,36 @@ export function useVaultData() {
 
 // Read user balance
 export function useUserBalance(userAddress?: `0x${string}`) {
-  const { data: usdcBalance } = useReadContract({
+  const { data: usdcBalance, refetch: refetchUsdcBalance } = useReadContract({
     address: CONTRACTS.USDC_MOCK,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: userAddress ? [userAddress] : undefined,
     query: {
       enabled: !!userAddress,
+      refetchInterval: 3000, // Auto-refetch every 3 seconds
     }
   });
 
-  const { data: vaultShares } = useReadContract({
+  const { data: vaultShares, refetch: refetchVaultShares } = useReadContract({
     address: CONTRACTS.YDS_VAULT,
     abi: YDS_VAULT_ABI,
     functionName: 'balanceOf',
     args: userAddress ? [userAddress] : undefined,
     query: {
       enabled: !!userAddress,
+      refetchInterval: 3000, // Auto-refetch every 3 seconds
     }
   });
 
-  const { data: usdcAllowance } = useReadContract({
+  const { data: usdcAllowance, refetch: refetchUsdcAllowance } = useReadContract({
     address: CONTRACTS.USDC_MOCK,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: userAddress ? [userAddress, CONTRACTS.YDS_VAULT] : undefined,
     query: {
       enabled: !!userAddress,
+      refetchInterval: 3000, // Auto-refetch every 3 seconds
     }
   });
 
@@ -71,6 +83,10 @@ export function useUserBalance(userAddress?: `0x${string}`) {
     usdcBalance: usdcBalance ? formatUnits(usdcBalance, 6) : '0',
     vaultShares: vaultShares ? formatUnits(vaultShares, 18) : '0',
     usdcAllowance: usdcAllowance ? formatUnits(usdcAllowance, 6) : '0',
+    // Expose refetch functions for manual refresh
+    refetchUsdcBalance,
+    refetchVaultShares,
+    refetchUsdcAllowance,
   };
 }
 

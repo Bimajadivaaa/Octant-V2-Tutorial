@@ -11,8 +11,9 @@ export default function DepositSection() {
   const hasTriggeredAutoDeposit = useRef(false);
   const [showYieldSuccess, setShowYieldSuccess] = useState(false);
   const [yieldAmount, setYieldAmount] = useState('');
+  const [hasDeposited, setHasDeposited] = useState(false);
   const { address, isConnected } = useAccount();
-  const { usdcBalance, usdcAllowance } = useUserBalance(address);
+  const { usdcBalance, usdcAllowance, vaultShares, refetchUsdcBalance, refetchVaultShares, refetchUsdcAllowance } = useUserBalance(address);
   const { sharePrice } = useVaultData();
   const mounted = useIsMounted();
   const { 
@@ -73,30 +74,55 @@ export default function DepositSection() {
   // Clear form and reset action on successful deposit
   useEffect(() => {
     if (isDepositConfirmed) {
+      // Use setTimeout to avoid direct setState in effect
+      const timer = setTimeout(() => {
+        setHasDeposited(true); // Mark that user has successfully deposited
+      }, 100);
+      
+      // Manually refresh balances immediately after successful deposit
+      refetchUsdcBalance();
+      refetchVaultShares();
+      refetchUsdcAllowance();
+      
       setTimeout(() => {
         setAmount('');
         setLastAction(null);
         hasTriggeredAutoDeposit.current = false; // Reset flag for next transaction
       }, 2000); // Keep success message visible for 2 seconds
+      
+      return () => clearTimeout(timer);
     }
-  }, [isDepositConfirmed]);
+  }, [isDepositConfirmed, refetchUsdcBalance, refetchVaultShares, refetchUsdcAllowance]);
+
+  // Check if user has vault shares (indicating previous deposits)
+  const userHasShares = parseFloat(vaultShares) > 0;
+  const canSimulateYield = hasDeposited || userHasShares;
 
   const handleSimulateYield = useCallback(() => {
-    // Simulate 10% yield on the deposited amount
-    console.log('🎯 Simulate Yield clicked, amount:', amount);
-    if (amount) {
-      const calculatedYield = (parseFloat(amount) * 0.1).toString();
+    // Simulate 10% yield on the deposited amount or current vault value
+    console.log('🎯 Simulate Yield clicked, amount:', amount, 'vaultShares:', vaultShares);
+    
+    let baseAmount = amount;
+    // If no amount entered, use current vault shares value as base
+    if (!amount && userHasShares) {
+      baseAmount = (parseFloat(vaultShares) * parseFloat(sharePrice)).toString();
+      console.log('🎯 Using vault value as base:', baseAmount, 'USDC');
+    }
+    
+    if (baseAmount) {
+      const calculatedYield = (parseFloat(baseAmount) * 0.1).toString();
       setYieldAmount(calculatedYield); // Store yield amount for popup display
       console.log('🎯 Yield amount to simulate:', calculatedYield, 'USDC');
       simulateYield(calculatedYield);
     } else {
       console.log('❌ No amount to simulate yield for');
     }
-  }, [amount, simulateYield]);
+  }, [amount, vaultShares, sharePrice, userHasShares, simulateYield]);
 
   // Show success popup when yield simulation is confirmed
   useEffect(() => {
     if (isConfirmed && isPending === false && isConfirming === false) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowYieldSuccess(true);
       // Auto-hide popup after 3 seconds
       setTimeout(() => {
@@ -153,14 +179,17 @@ export default function DepositSection() {
         </div>
       )}
 
-      {/* Demo: Simulate Yield Button (appears after successful deposit) */}
-      {isDepositConfirmed && (
+      {/* Demo: Simulate Yield Button (appears if user has deposited before) */}
+      {canSimulateYield && (
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-sm font-bold text-blue-800 mb-1">🎯 DEMO: Simulate Yield Generation</h4>
               <p className="text-xs text-blue-700">
-                Click below to instantly generate 10% yield for testing harvest functionality
+                {userHasShares 
+                  ? `Generate 10% yield on your ${(parseFloat(vaultShares) * parseFloat(sharePrice)).toFixed(2)} USDC vault position`
+                  : 'Click below to instantly generate 10% yield for testing harvest functionality'
+                }
               </p>
             </div>
             <button
@@ -282,7 +311,7 @@ export default function DepositSection() {
                 }}
                 className="px-6 py-2 bg-black text-white font-bold hover:bg-gray-800 cursor-pointer"
               >
-                CONTINUE TO HARVEST
+                Close
               </button>
             </div>
           </div>
