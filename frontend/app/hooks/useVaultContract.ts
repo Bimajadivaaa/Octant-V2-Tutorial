@@ -39,7 +39,16 @@ export function useVaultData() {
     totalSupply: totalSupply ? formatUnits(totalSupply, 18) : '0', // Vault shares have 18 decimals
     lastRecordedAssets: lastRecordedAssets ? formatUnits(lastRecordedAssets, 6) : '0',
     sharePrice: totalSupply && totalAssets && totalSupply > 0n 
-      ? (Number(formatUnits(totalAssets, 6)) / Number(formatUnits(totalSupply, 18))).toFixed(4)
+      ? (() => {
+          const assets = Number(formatUnits(totalAssets, 6));
+          const supply = Number(formatUnits(totalSupply, 18));
+          const price = assets / supply;
+          // Handle edge cases where calculation results in very large or invalid numbers
+          if (!isFinite(price) || price > 1000000 || price <= 0) {
+            return '1.0000';
+          }
+          return price.toFixed(4);
+        })()
       : '1.0000'
   };
 }
