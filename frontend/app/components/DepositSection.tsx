@@ -9,6 +9,8 @@ export default function DepositSection() {
   const [amount, setAmount] = useState('');
   const [lastAction, setLastAction] = useState<'approve' | 'deposit' | null>(null);
   const hasTriggeredAutoDeposit = useRef(false);
+  const [showYieldSuccess, setShowYieldSuccess] = useState(false);
+  const [yieldAmount, setYieldAmount] = useState('');
   const { address, isConnected } = useAccount();
   const { usdcBalance, usdcAllowance } = useUserBalance(address);
   const { sharePrice } = useVaultData();
@@ -16,6 +18,7 @@ export default function DepositSection() {
   const { 
     approve, 
     deposit,
+    simulateYield,
     // Approve states
     isApprovePending,
     isApproveConfirming,
@@ -25,7 +28,11 @@ export default function DepositSection() {
     isDepositPending,
     isDepositConfirming,
     isDepositConfirmed,
-    depositError
+    depositError,
+    // General states
+    isPending,
+    isConfirming,
+    isConfirmed
   } = useVaultOperations();
 
   const needsApproval = amount && parseFloat(amount) > parseFloat(usdcAllowance);
@@ -74,6 +81,31 @@ export default function DepositSection() {
     }
   }, [isDepositConfirmed]);
 
+  const handleSimulateYield = useCallback(() => {
+    // Simulate 10% yield on the deposited amount
+    console.log('🎯 Simulate Yield clicked, amount:', amount);
+    if (amount) {
+      const calculatedYield = (parseFloat(amount) * 0.1).toString();
+      setYieldAmount(calculatedYield); // Store yield amount for popup display
+      console.log('🎯 Yield amount to simulate:', calculatedYield, 'USDC');
+      simulateYield(calculatedYield);
+    } else {
+      console.log('❌ No amount to simulate yield for');
+    }
+  }, [amount, simulateYield]);
+
+  // Show success popup when yield simulation is confirmed
+  useEffect(() => {
+    if (isConfirmed && isPending === false && isConfirming === false) {
+      setShowYieldSuccess(true);
+      // Auto-hide popup after 3 seconds
+      setTimeout(() => {
+        setShowYieldSuccess(false);
+        setYieldAmount(''); // Reset yield amount when popup closes
+      }, 3000);
+    }
+  }, [isConfirmed, isPending, isConfirming]);
+
 
   if (!mounted) {
     return (
@@ -118,6 +150,32 @@ export default function DepositSection() {
         <div className="bg-green-50 border border-green-200 p-3 text-green-700 text-sm">
           {isApproveConfirmed && !isDepositConfirmed && '✅ Approval confirmed! Automatically proceeding with deposit...'}
           {isDepositConfirmed && '✅ Transaction confirmed! Your deposit was successful.'}
+        </div>
+      )}
+
+      {/* Demo: Simulate Yield Button (appears after successful deposit) */}
+      {isDepositConfirmed && (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-bold text-blue-800 mb-1">🎯 DEMO: Simulate Yield Generation</h4>
+              <p className="text-xs text-blue-700">
+                Click below to instantly generate 10% yield for testing harvest functionality
+              </p>
+            </div>
+            <button
+              onClick={handleSimulateYield}
+              disabled={isPending || isConfirming}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:bg-gray-300 cursor-pointer"
+            >
+              {isPending || isConfirming ? 'GENERATING...' : 'SIMULATE YIELD'}
+            </button>
+          </div>
+          {(isPending || isConfirming) && (
+            <div className="mt-2 text-xs text-blue-600">
+              ⏳ Generating yield simulation...
+            </div>
+          )}
         </div>
       )}
 
@@ -199,6 +257,37 @@ export default function DepositSection() {
         <p>• Your principal is protected - only yield profits are donated</p>
         <p>• You can withdraw your principal at any time</p>
       </div>
+
+      {/* Yield Success Popup */}
+      {showYieldSuccess && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white border-2 border-black p-8 max-w-md mx-4 shadow-2xl transform transition-all duration-300 ease-out">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🚀</div>
+              <h3 className="text-2xl font-bold mb-2">YIELD GENERATED!</h3>
+              <p className="text-lg mb-4">
+                Successfully simulated <span className="font-mono font-bold text-green-600">{yieldAmount ? parseFloat(yieldAmount).toFixed(2) : '0'} USDC</span> yield!
+              </p>
+              <div className="bg-green-50 border border-green-200 p-4 mb-4">
+                <p className="text-sm text-green-700">
+                  💰 <strong>Available Profit:</strong> +{yieldAmount ? parseFloat(yieldAmount).toFixed(2) : '0'} USDC<br />
+                  🎯 <strong>Ready for Harvest:</strong> Switch to HARVEST tab<br />
+                  🌱 <strong>Demo Purpose:</strong> Instant yield generation
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowYieldSuccess(false);
+                  setYieldAmount(''); // Reset yield amount when manually closed
+                }}
+                className="px-6 py-2 bg-black text-white font-bold hover:bg-gray-800 cursor-pointer"
+              >
+                CONTINUE TO HARVEST
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -47,6 +47,7 @@ export const CONTRACTS = {
   YDS_VAULT: contractAddresses.localhost.YDS_VAULT as `0x${string}`,
   DONATION_ROUTER: contractAddresses.localhost.DONATION_ROUTER as `0x${string}`,
   AAVE_ADAPTER: contractAddresses.localhost.AAVE_ADAPTER as `0x${string}`,
+  MOCK_YIELD_ADAPTER: contractAddresses.localhost.AAVE_ADAPTER as `0x${string}`, // Same as AAVE_ADAPTER for demo
 }
 
 // Local blockchain configuration

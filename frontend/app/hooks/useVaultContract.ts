@@ -1,7 +1,7 @@
 'use client';
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { YDS_VAULT_ABI, ERC20_ABI } from '../lib/abis';
+import { YDS_VAULT_ABI, ERC20_ABI, MOCK_YIELD_ADAPTER_ABI } from '../lib/abis';
 import { CONTRACTS } from '../lib/wagmi';
 import { parseUnits, formatUnits } from 'viem';
 
@@ -163,6 +163,16 @@ export function useVaultOperations() {
     });
   };
 
+  const simulateYield = (yieldAmount: string) => {
+    writeGeneral({
+      address: CONTRACTS.MOCK_YIELD_ADAPTER,
+      abi: MOCK_YIELD_ADAPTER_ABI,
+      functionName: 'simulateYield',
+      args: [parseUnits(yieldAmount, 6)],
+      gas: 100000n,
+    });
+  };
+
   return {
     approve,
     deposit,
@@ -170,6 +180,7 @@ export function useVaultOperations() {
     redeem,
     harvest,
     mintUSDC,
+    simulateYield,
     // Approve-specific states
     isApprovePending,
     isApproveConfirming,

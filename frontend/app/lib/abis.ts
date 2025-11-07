@@ -164,6 +164,23 @@ export const ERC20_ABI = [
   },
 ] as const
 
+export const MOCK_YIELD_ADAPTER_ABI = [
+  {
+    type: 'function',
+    name: 'simulateYield',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'yieldAmount', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'totalAssets',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+] as const
+
 export const DONATION_ROUTER_ABI = [
   {
     type: 'function',
