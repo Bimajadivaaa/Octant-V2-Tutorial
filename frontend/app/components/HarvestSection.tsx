@@ -35,11 +35,6 @@ export default function HarvestSection() {
     if (isConfirmed && !isPending && !isConfirming && harvestedAmount) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowHarvestSuccess(true);
-      // Auto-hide popup after 4 seconds
-      setTimeout(() => {
-        setShowHarvestSuccess(false);
-        setHarvestedAmount('');
-      }, 4000);
     }
   }, [isConfirmed, isPending, isConfirming, harvestedAmount]);
 

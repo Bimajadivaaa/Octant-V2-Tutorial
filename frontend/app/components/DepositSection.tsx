@@ -124,11 +124,6 @@ export default function DepositSection() {
     if (isConfirmed && isPending === false && isConfirming === false) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowYieldSuccess(true);
-      // Auto-hide popup after 3 seconds
-      setTimeout(() => {
-        setShowYieldSuccess(false);
-        setYieldAmount(''); // Reset yield amount when popup closes
-      }, 3000);
     }
   }, [isConfirmed, isPending, isConfirming]);
 

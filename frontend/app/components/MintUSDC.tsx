@@ -36,12 +36,6 @@ export default function MintUSDC() {
         setShowMintSuccess(true);
         // Manually refresh USDC balance immediately after successful mint
         refetchUsdcBalance();
-        
-        // Auto-hide popup after 3 seconds
-        setTimeout(() => {
-          setShowMintSuccess(false);
-          setMintedAmount('');
-        }, 3000);
       }, 100);
       
       return () => clearTimeout(timer);

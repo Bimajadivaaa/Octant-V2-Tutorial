@@ -66,12 +66,6 @@ export default function WithdrawSection() {
         // Manually refresh balances immediately after successful withdraw
         refetchVaultShares();
         refetchUsdcBalance();
-        
-        // Auto-hide popup after 3 seconds
-        setTimeout(() => {
-          setShowWithdrawSuccess(false);
-          setWithdrawnAmount('');
-        }, 3000);
       }, 100);
       
       return () => clearTimeout(timer);
