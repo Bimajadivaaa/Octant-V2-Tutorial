@@ -176,7 +176,7 @@ The result:
 | Layer           | Tool / Framework              | Description                                |
 | --------------- | ----------------------------- | ------------------------------------------ |
 | Smart Contracts | Solidity + Foundry            | Core logic for vault, adapter, and router  |
-| Frontend        | Next.js 14 + Tailwind + Wagmi | Connect wallet and interact with the vault |
+| Frontend        | Next.js 16 + Tailwind + Wagmi | Connect wallet and interact with the vault |
 | Blockchain      | Anvil (Local EVM)             | Local testing environment                  |
 | Package Manager | pnpm / npm                    | Frontend dependency management             |
 
