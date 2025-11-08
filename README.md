@@ -199,10 +199,8 @@ MIT © 2025 [Bimajadivaaa](https://github.com/Bimajadivaaa)
 
 * 📘 **Docs:** [https://docs.v2.octant.build](https://docs.v2.octant.build)
 * 🎥 **Tutorial Video:** [Youtube](https://youtu.be/xkVgl2yoq-g)
-* ✨ **Medium Blog:** [Coming Soon]()
+* ✨ **Medium Blog:** [Medium](https://medium.com/@bimajdv7/how-i-built-a-self-perpetuating-donation-engine-that-never-touches-your-principal-834a86512ea8)
 
 ---
 
 > This project is part of the **Octant V2 Hackathon**, demonstrating how on-chain yield can fund public goods transparently through a yield-donating vault.
-
-```
