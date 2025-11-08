@@ -13,6 +13,7 @@ export default function WithdrawSection() {
   const { vaultShares, refetchVaultShares, refetchUsdcBalance } = useUserBalance(address);
   const { sharePrice } = useVaultData();
   const mounted = useIsMounted();
+
   const { 
     redeem, 
     isPending, 
@@ -23,6 +24,18 @@ export default function WithdrawSection() {
 
   const maxWithdraw = (parseFloat(vaultShares) * parseFloat(sharePrice)).toFixed(2);
   const isProcessing = isPending || isConfirming;
+
+  // Essential debug logging only when balance is 0 but should have value
+  console.log('🔍 WithdrawSection Debug:', {
+    vaultShares,
+    vaultSharesParsed: parseFloat(vaultShares),
+    sharePrice,
+    sharePriceParsed: parseFloat(sharePrice),
+    maxWithdraw,
+    maxWithdrawParsed: parseFloat(maxWithdraw),
+    userAddress: address,
+    isConnected
+  });
 
   const handleWithdraw = async () => {
     if (!amount || !address) return;
@@ -117,7 +130,18 @@ export default function WithdrawSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-bold mb-2">WITHDRAW USDC</h3>
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-lg font-bold">WITHDRAW USDC</h3>
+          <button
+            onClick={() => {
+              refetchVaultShares();
+              refetchUsdcBalance();
+            }}
+            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-sm border border-gray-300 cursor-pointer"
+          >
+            🔄 Refresh
+          </button>
+        </div>
         <p className="text-sm text-gray-600 mb-4">
           Redeem your vault shares to withdraw your principal. Your deposited amount remains protected.
         </p>

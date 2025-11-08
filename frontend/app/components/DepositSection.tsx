@@ -30,10 +30,16 @@ export default function DepositSection() {
     isDepositConfirming,
     isDepositConfirmed,
     depositError,
+    // Yield states
+    isYieldPending,
+    isYieldConfirming,
+    isYieldConfirmed,
+    yieldError,
     // General states
     isPending,
     isConfirming,
-    isConfirmed
+    isConfirmed,
+    error
   } = useVaultOperations();
 
   const needsApproval = amount && parseFloat(amount) > parseFloat(usdcAllowance);
@@ -79,10 +85,19 @@ export default function DepositSection() {
         setHasDeposited(true); // Mark that user has successfully deposited
       }, 100);
       
-      // Manually refresh balances immediately after successful deposit
-      refetchUsdcBalance();
-      refetchVaultShares();
-      refetchUsdcAllowance();
+      // Manually refresh balances after successful deposit with staggered timing
+      setTimeout(() => {
+        refetchUsdcBalance();
+        refetchVaultShares();
+        refetchUsdcAllowance();
+      }, 500); // Wait 500ms for blockchain state to update
+      
+      // Additional refetch after 2 seconds to ensure consistency
+      setTimeout(() => {
+        refetchUsdcBalance();
+        refetchVaultShares();
+        refetchUsdcAllowance();
+      }, 2500);
       
       setTimeout(() => {
         setAmount('');
@@ -110,7 +125,9 @@ export default function DepositSection() {
     }
     
     if (baseAmount) {
-      const calculatedYield = (parseFloat(baseAmount) * 0.1).toString();
+      const yieldValue = parseFloat(baseAmount) * 0.1;
+      // Use actual 10% calculation, avoid minimum override
+      const calculatedYield = yieldValue.toFixed(6); // 6 decimals for USDC, avoid scientific notation
       setYieldAmount(calculatedYield); // Store yield amount for popup display
       console.log('🎯 Yield amount to simulate:', calculatedYield, 'USDC');
       simulateYield(calculatedYield);
@@ -121,11 +138,29 @@ export default function DepositSection() {
 
   // Show success popup when yield simulation is confirmed
   useEffect(() => {
-    if (isConfirmed && isPending === false && isConfirming === false) {
+    if (isYieldConfirmed && isYieldPending === false && isYieldConfirming === false) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowYieldSuccess(true);
+      console.log('✅ Simulate yield transaction confirmed');
     }
-  }, [isConfirmed, isPending, isConfirming]);
+  }, [isYieldConfirmed, isYieldPending, isYieldConfirming]);
+
+  // Log errors for debugging
+  useEffect(() => {
+    if (yieldError) {
+      console.error('❌ Simulate yield failed:', yieldError);
+    }
+  }, [yieldError]);
+
+  // Debug user balance and shares
+  console.log('📊 DepositSection Debug:', {
+    userVaultShares: vaultShares,
+    userUsdcBalance: usdcBalance,
+    sharePrice,
+    hasDeposited,
+    userHasShares,
+    canSimulateYield
+  });
 
 
   if (!mounted) {
@@ -160,9 +195,9 @@ export default function DepositSection() {
       </div>
 
       {/* Error Display */}
-      {(approveError || depositError) && (
+      {(approveError || depositError || yieldError || error) && (
         <div className="bg-red-50 border border-red-200 p-3 text-red-700 text-sm">
-          Error: {approveError?.message || depositError?.message || 'Transaction failed'}
+          Error: {approveError?.message || depositError?.message || yieldError?.message || error?.message || 'Transaction failed'}
         </div>
       )}
 
@@ -189,10 +224,10 @@ export default function DepositSection() {
             </div>
             <button
               onClick={handleSimulateYield}
-              disabled={isPending || isConfirming}
+              disabled={isYieldPending || isYieldConfirming}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:bg-gray-300 cursor-pointer"
             >
-              {isPending || isConfirming ? 'GENERATING...' : 'SIMULATE YIELD'}
+              {isYieldPending || isYieldConfirming ? 'GENERATING...' : 'SIMULATE YIELD'}
             </button>
           </div>
           {(isPending || isConfirming) && (

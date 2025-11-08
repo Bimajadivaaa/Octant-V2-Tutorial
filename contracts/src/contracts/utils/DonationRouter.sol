@@ -41,24 +41,32 @@ contract DonationRouter {
         console2.log("Total profit to distribute:", amount);
         console2.log("Number of recipients:", receivers.length);
         
+        // 1. Distribute to each receiver according to their bps share
         IERC20 erc = IERC20(token);
         uint256 totalDistributed = 0;
+
         
         for (uint256 i = 0; i < receivers.length; i++) {
+            // 2. Calculate each receiver's share
             uint256 part = (amount * receivers[i].bps) / MAX_BPS;
+
             console2.log("Recipient", i + 1, "allocation:");
             console2.log("  -> Address:", receivers[i].account);
             console2.log("  -> Share (bps):", receivers[i].bps);
             console2.log("  -> Amount receiving:", part);
             
-            // Pull from caller then forward to each receiver.
+            // 3. Pull from caller then forward to each receiver.
             erc.safeTransferFrom(msg.sender, receivers[i].account, part);
             totalDistributed += part;
+
         }
         
         console2.log("Total distributed to public goods:", totalDistributed);
         console2.log("=== PUBLIC GOODS FUNDING COMPLETE ===\n");
+
+        // 4. Emit event for off-chain tracking
         emit Donated(token, amount);
+
     }
 
     /// @return the number of configured receivers

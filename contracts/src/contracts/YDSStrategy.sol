@@ -9,10 +9,11 @@ import {console2} from "forge-std/console2.sol";
 
 /// @dev Adapter surface the vault expects.
 interface IYieldAdapterLike {
+    // 1. Add the methods the vault will call on the adapter
     function deposit(uint256 amount) external;
     function withdraw(uint256 amount) external returns (uint256);
     function totalAssets() external view returns (uint256);
-    function asset() external view returns (address);
+    function asset() external view returns (address);  
 }
 
 /// @dev Minimal interface for the DonationRouter.
@@ -57,8 +58,9 @@ contract YDSVault is ERC4626 {
     /// @notice Update the adapter (for testing purposes)
     /// @dev Only for testing - production contracts shouldn't have this
     function setAdapter(address adapter_) external {
+        // 2. Add access control as needed
         adapter = IYieldAdapterLike(adapter_);
-        require(address(asset()) == adapter.asset(), "ASSET_MISMATCH");
+        require(address(asset()) == adapter.asset(), "Asset Missmatch");
     }
 
     // =============================================================
@@ -72,13 +74,16 @@ contract YDSVault is ERC4626 {
         console2.log("2. Minting shares to user:", shares);
         console2.log("3. User address:", receiver);
         
+        // 3. Add deposit logic first
         super._deposit(caller, receiver, assets, shares);
+
         
         console2.log("4. Vault balance before adapter deposit:", IERC20(address(asset())).balanceOf(address(this)));
         
-        // Push funds into the adapter so capital is productive
+        // 4. Push funds into the adapter so capital is productive
         IERC20(address(asset())).safeIncreaseAllowance(address(adapter), assets);
         adapter.deposit(assets);
+
         
         console2.log("5. Funds sent to yield adapter for productive investment");
         console2.log("6. Updated total assets:", totalAssets());
@@ -96,12 +101,13 @@ contract YDSVault is ERC4626 {
         console2.log("3. User address:", receiver);
         console2.log("4. Total assets before withdrawal:", totalAssets());
         
-        // Pull liquidity back from the adapter
+        // 5. Pull liquidity back from the adapter
         uint256 withdrawn = adapter.withdraw(assets);
         console2.log("5. Assets withdrawn from yield adapter:", withdrawn);
         
-        // Complete the withdrawal first
+        // 6. Complete the withdrawal first
         super._withdraw(caller, receiver, owner, assets, shares);
+
         console2.log("6. Assets transferred to user:", assets);
         
         // Sync watermark after withdrawal is complete
@@ -113,6 +119,7 @@ contract YDSVault is ERC4626 {
 
     /// @dev Vault AUM = loose assets in vault + assets held by the adapter.
     function totalAssets() public view override returns (uint256) {
+        // 7. Add total assets logic
         uint256 loose = IERC20(address(asset())).balanceOf(address(this));
         uint256 invested = adapter.totalAssets();
         return loose + invested;
@@ -137,15 +144,19 @@ contract YDSVault is ERC4626 {
         if (profit > 0) {
             console2.log("4. PROFIT DETECTED - Starting donation process...");
             
-            // Pull back exactly the profit from the adapter to this vault.
+            // 8. Pull back exactly the profit from the adapter to this vault.
             adapter.withdraw(profit);
+
             console2.log("5. Profit withdrawn from yield adapter");
 
-            // Approve the router to pull `profit` and split to receivers.
+            // 9. Approve the router to pull `profit` and split to receivers.
             IERC20(address(asset())).safeIncreaseAllowance(address(router), profit);
+
             console2.log("6. Approved donation router to spend profit");
             
+            // 10. Route the profit to the donation router.
             router.route(address(asset()), profit);
+
             console2.log("7. Profit donated to public goods recipients!");
             console2.log("   -> This profit came from YIELD, not user principal");
         } else {
@@ -161,6 +172,8 @@ contract YDSVault is ERC4626 {
 
     /// @dev Updates the high-water mark to current AUM.
     function _syncWatermark() internal {
+        // 11. Update watermark logic
         lastRecordedAssets = totalAssets();
+        
     }
 }

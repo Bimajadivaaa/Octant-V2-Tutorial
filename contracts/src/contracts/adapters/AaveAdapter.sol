@@ -13,7 +13,9 @@ interface IAavePool {
 
 /// @dev aToken exposes underlying balance accounting 1:1 (subject to index).
 interface IAToken {
+    // 1. Add the methods we need
     function balanceOf(address user) external view returns (uint256);
+
 }
 
 /// @title AaveAdapter
@@ -22,7 +24,7 @@ interface IAToken {
 contract AaveAdapter {
     using SafeERC20 for IERC20;
 
-    address public immutable OWNER;     // vault address
+    address public immutable OWNER;
     address public immutable UNDERLYING;
     IAavePool public immutable POOL;
     IAToken public immutable ATOKEN;
@@ -44,8 +46,9 @@ contract AaveAdapter {
         POOL = IAavePool(_pool);
         ATOKEN = IAToken(_aToken);
 
-        // Pre-approve the pool to pull unlimited underlying from this adapter.
+        // 2. Pre-approve the pool to pull unlimited underlying from this adapter.
         IERC20(_underlying).approve(_pool, type(uint256).max);
+
     }
 
     /// @notice Called by the vault to move `amount` underlying from the vault into Aave.
@@ -53,11 +56,14 @@ contract AaveAdapter {
         console2.log("=== AAVE ADAPTER: INVESTING FOR YIELD ===");
         console2.log("Transferring assets to Aave for yield generation:", amount);
         
-        // Pull underlying from the vault and supply to Aave on behalf of this adapter.
+        // 3. Pull underlying from the vault and supply to Aave on behalf of this adapter.
         IERC20(UNDERLYING).safeTransferFrom(msg.sender, address(this), amount);
+
         console2.log("Assets received by adapter from vault");
         
+        // 4. Supply to Aave pool.
         POOL.supply(UNDERLYING, amount, address(this), 0);
+
         console2.log("Assets supplied to Aave V3 pool - Now earning yield!");
         console2.log("aToken balance:", ATOKEN.balanceOf(address(this)));
         console2.log("=== YIELD GENERATION STARTED ===\n");
@@ -70,7 +76,9 @@ contract AaveAdapter {
         console2.log("Requested withdrawal amount:", amount);
         console2.log("aToken balance before withdrawal:", ATOKEN.balanceOf(address(this)));
         
+        // 5. Withdraw underlying from Aave back to this adapter.
         uint256 withdrawn = POOL.withdraw(UNDERLYING, amount, OWNER);
+
         
         console2.log("Assets withdrawn from Aave:", withdrawn);
         console2.log("Remaining aToken balance:", ATOKEN.balanceOf(address(this)));
@@ -81,7 +89,9 @@ contract AaveAdapter {
 
     /// @notice Total underlying attributed to this adapter (via aToken balance).
     function totalAssets() external view returns (uint256) {
+        // 6. Return the aToken balance as the total assets under management.
         return ATOKEN.balanceOf(address(this));
+
     }
 
     /// @notice Exposes the underlying asset address to the vault.

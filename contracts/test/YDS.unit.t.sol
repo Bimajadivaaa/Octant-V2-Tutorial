@@ -140,5 +140,16 @@ contract YDSUnitTest is Test {
         uint256 assetsOut = vault.previewRedeem(shares);
         // Since profit got donated, PPS ~= 1.0 in this MVP
         assertApproxEqAbs(assetsOut, 2_000e6, 1, "principal should be intact");
+        
+        // Actually perform the withdrawal to test the withdrawal flow
+        uint256 userBalanceBefore = usdc.balanceOf(user);
+        vm.startPrank(user);
+        vault.redeem(shares, user, user);
+        vm.stopPrank();
+        
+        // Verify withdrawal was successful
+        uint256 userBalanceAfter = usdc.balanceOf(user);
+        assertApproxEqAbs(userBalanceAfter - userBalanceBefore, 2_000e6, 1, "user should receive principal");
+        assertEq(vault.balanceOf(user), 0, "user should have no shares left");
     }
 }

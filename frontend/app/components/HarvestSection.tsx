@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useVaultData, useVaultOperations } from '../hooks/useVaultContract';
+import { useVaultData, useVaultOperations, useUserBalance } from '../hooks/useVaultContract';
 import { useDonationData } from '../hooks/useDonationData';
 import { useIsMounted } from '../hooks/useIsMounted';
 
 export default function HarvestSection() {
   const [showHarvestSuccess, setShowHarvestSuccess] = useState(false);
   const [harvestedAmount, setHarvestedAmount] = useState('');
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { totalAssets, lastRecordedAssets } = useVaultData();
   const { currentProfit, recipients } = useDonationData();
+  const { refetchVaultShares, refetchUsdcBalance } = useUserBalance(address);
   const mounted = useIsMounted();
   const { 
     harvest, 
@@ -33,9 +34,13 @@ export default function HarvestSection() {
   // Show success popup when harvest is confirmed
   useEffect(() => {
     if (isConfirmed && !isPending && !isConfirming && harvestedAmount) {
+      // Manually refresh balances immediately after successful harvest
+      if (refetchVaultShares) refetchVaultShares();
+      if (refetchUsdcBalance) refetchUsdcBalance();
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowHarvestSuccess(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConfirmed, isPending, isConfirming, harvestedAmount]);
 
   if (!mounted) {
