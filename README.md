@@ -9,9 +9,9 @@ This repository demonstrates how to build a **Yield-Donating Strategy (YDS)** us
 The goal is to show how DeFi yield can automatically fund public goods — without reducing user principal.
 
 It includes:
-- 🧩 Solidity smart contracts (Vault, Adapter, Donation Router)  
-- ⚙️ Foundry scripts for testing and deployment  
-- 💻 A simple frontend for live demo and interaction
+- 🧩 Solidity smart contracts (Vault, Adapter, Donation Router).
+- ⚙️ Foundry scripts for testing and deployment.
+- 💻 A simple frontend for live demo and interaction.
 
 ---
 
